@@ -23,7 +23,13 @@ use vars qw ($PROG $PROGLOG $HADOOP_CMD @HDFS_NAMESPACE $TOP_LIMIT
 # main
 &initialization;
 &parse_opts;
-&get_hdfs_quota_info;
+if ( defined $hdfs_topdir ) {
+    $hdfs_topdir ="/$hdfs_topdir" unless $hdfs_topdir =~ /^\//;
+} else {
+    $hdfs_topdir = "/user";
+}
+
+&get_hdfs_quota_info($hdfs_topdir);
 &report_hdfs_top_df;
 exit;
 
@@ -61,10 +67,9 @@ sub parse_opts {
 # read the quota usage information
 sub get_hdfs_quota_info {
    
-    my $hdfs_top_namespace = "/user"; 
+    my ($hdfs_top_namespace) = (@_);
     my $run_cmd = "$HADOOP_CMD  fs -count -q $hdfs_top_namespace/*";
 
-  
     my @quota_info_namespace = `$run_cmd`;
     my $exit_status = $? >> 8;
 
@@ -95,7 +100,10 @@ sub get_hdfs_quota_info {
             $hdfs_quota_info{$hdfs_quota_dir}{'SPACE_QUOTA'} = $space_quota;
             $hdfs_quota_info{$hdfs_quota_dir}{'SPACE_QUOTA_FORMATTED'} = format_bytes($space_quota);
             $hdfs_quota_info{$hdfs_quota_dir}{'REMAINING_SPACE_QUOTA'} = $remaining_space_quota;
-            $hdfs_quota_info{$hdfs_quota_dir}{'USED_SPACE'} = int(int($space_quota) - int($remaining_space_quota));
+            $hdfs_quota_info{$hdfs_quota_dir}{'USED_SPACE'} = 
+                int(int($space_quota) - int($remaining_space_quota));
+            $hdfs_quota_info{$hdfs_quota_dir}{'USED_SPACE_FORMATTED'} = 
+                format_bytes(int(int($space_quota) - int($remaining_space_quota)));
             $hdfs_quota_info{$hdfs_quota_dir}{'PERCENTAGE_USED_SPACE'} = 
                 sprintf "%.2f ", ( ($space_quota - $remaining_space_quota) * 100 ) / $space_quota;
             $hdfs_quota_info{$hdfs_quota_dir}{'HDFS_FILENAME'} = $hdfs_dir;
@@ -115,20 +123,21 @@ sub get_hdfs_quota_info {
 # report the output
 sub report_hdfs_top_df {
 
-   my ($directory, $allocation, $percent_used) = ();
+   my ($directory, $allocation, $hdfs_used, $percent_used) = ();
    my ($iterator) = 0;
    #print "VERBOSE : $TOP_LIMIT \n";
 
    format REPORT_HANDLE_HEADER =
-HDFS Directory          Allocated Quota      Used (%)
--------------------------------------------------------
+HDFS Directory          Allocated Quota       Used Space      Used (%)
+----------------------------------------------------------------------
 .
 
    format REPORT_HANDLE =
-@<<<<<<<<<<<<<<<<<<<<< @|||||||||||||||||||  @<<<<<<<<
-$directory, $allocation, $percent_used
+@<<<<<<<<<<<<<<<<<<<<< @|||||||||||||||||||  @|||||||||||||  @<<<<<<<<
+$directory, $allocation, $hdfs_used, $percent_used
 .
 
+    if (%hdfs_quota_info) {
     $~ = 'REPORT_HANDLE_HEADER'; write;
     $~ = 'REPORT_HANDLE'; 
 
@@ -137,12 +146,15 @@ $directory, $allocation, $percent_used
                          $hdfs_quota_info{$b}{'PERCENTAGE_USED_SPACE'} <=> $hdfs_quota_info{$a}{'PERCENTAGE_USED_SPACE'} 
                        } 
                        keys %hdfs_quota_info )   {
-      $directory = $hdfs_quota_dir;
-      $allocation = trim($hdfs_quota_info{$hdfs_quota_dir}{'SPACE_QUOTA_FORMATTED'});
+      $directory    = $hdfs_quota_dir;
+      $allocation   = trim($hdfs_quota_info{$hdfs_quota_dir}{'SPACE_QUOTA_FORMATTED'});
+      $hdfs_used    = trim($hdfs_quota_info{$hdfs_quota_dir}{'USED_SPACE_FORMATTED'});
       $percent_used = trim($hdfs_quota_info{$hdfs_quota_dir}{'PERCENTAGE_USED_SPACE'});
       write;
       $iterator += 1;
       last if $iterator == $TOP_LIMIT;
+    }
+
     }
 
 }
