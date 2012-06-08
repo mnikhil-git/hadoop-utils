@@ -1,16 +1,16 @@
 #!/usr/bin/perl
 #
-# $Id: hdfs-quota-df-top.pl,v 1.3 2012/05/20 05:54:37 mnikhil Exp $
-# $Author: mnikhil $
+# $Id: hdfs-quota-df-top.pl 9255 2012-06-08 16:00:41Z nikhil.mulley $
+# $Author: nikhil.mulley $
 # $HeadURL:$
 # 
 # Description: report the top quota usage directories in HDFS
 #
-# Nikhil Mulley, InMobi
+# Nikhil Mulley
 #
 use strict;
 use warnings;
-use Getopt::Long qw(:config no_ignore_case bundling);
+use Getopt::Long qw(:config no_ignore_case);
 use File::Basename;
 use Number::Bytes::Human qw(format_bytes);
 use Pod::Usage;
@@ -18,11 +18,12 @@ use Data::Dumper qw (Dumper);
 
 # globals
 use vars qw ($PROG $PROGLOG $HADOOP_CMD @HDFS_NAMESPACE $TOP_LIMIT
-             $hdfs_topdir $verbose %hdfs_quota_info );
+             $hdfs_topdir @hdfs_abs_dirs $verbose %hdfs_quota_info );
 
 # main
 &initialization;
 &parse_opts;
+
 if ( defined $hdfs_topdir ) {
     $hdfs_topdir ="/$hdfs_topdir" unless $hdfs_topdir =~ /^\//;
 } else {
@@ -55,6 +56,7 @@ sub parse_opts {
 
     GetOptions(
         'd=s' => \$hdfs_topdir,
+        'path:s{0,9}' => \@hdfs_abs_dirs,
         'l=i' => \$TOP_LIMIT,
         'verbose' => \$verbose,
         'help|h|?' => \$help
@@ -128,34 +130,44 @@ sub report_hdfs_top_df {
    #print "VERBOSE : $TOP_LIMIT \n";
 
    format REPORT_HANDLE_HEADER =
-HDFS Directory          Allocated Quota       Used Space      Used (%)
+HDFS Directory          Allocated Quota      Used Space       Used (%)
 ----------------------------------------------------------------------
 .
 
    format REPORT_HANDLE =
-@<<<<<<<<<<<<<<<<<<<<< @|||||||||||||||||||  @|||||||||||||  @<<<<<<<<
+@<<<<<<<<<<<<<<<<<<<<< @|||||||||||||||||||  @|||||||||||||   @<<<<<<<<<
 $directory, $allocation, $hdfs_used, $percent_used
 .
 
     if (%hdfs_quota_info) {
+
+    my @hdfs_dirs_list = keys %hdfs_quota_info;
+
     $~ = 'REPORT_HANDLE_HEADER'; write;
     $~ = 'REPORT_HANDLE'; 
 
-    foreach my $hdfs_quota_dir (
-                       sort {
-                         $hdfs_quota_info{$b}{'PERCENTAGE_USED_SPACE'} <=> $hdfs_quota_info{$a}{'PERCENTAGE_USED_SPACE'} 
-                       } 
-                       keys %hdfs_quota_info )   {
-      $directory    = $hdfs_quota_dir;
-      $allocation   = trim($hdfs_quota_info{$hdfs_quota_dir}{'SPACE_QUOTA_FORMATTED'});
-      $hdfs_used    = trim($hdfs_quota_info{$hdfs_quota_dir}{'USED_SPACE_FORMATTED'});
-      $percent_used = trim($hdfs_quota_info{$hdfs_quota_dir}{'PERCENTAGE_USED_SPACE'});
-      write;
-      $iterator += 1;
-      last if $iterator == $TOP_LIMIT;
+    if ( @hdfs_abs_dirs && grep { /$hdfs_topdir/ } @hdfs_abs_dirs ) {
+      @hdfs_dirs_list = ();
+      foreach ( @hdfs_abs_dirs ) {
+        chomp;
+        push ( @hdfs_dirs_list, $_ ) if ( defined($hdfs_quota_info{$_}) ) ;
+      }
     }
 
-    }
+    foreach my $hdfs_quota_dir (
+                           sort {
+                             $hdfs_quota_info{$b}{'PERCENTAGE_USED_SPACE'} <=> $hdfs_quota_info{$a}{'PERCENTAGE_USED_SPACE'} 
+                           } @hdfs_dirs_list ) {
+            $directory    = $hdfs_quota_dir;
+            $allocation   = trim($hdfs_quota_info{$hdfs_quota_dir}{'SPACE_QUOTA_FORMATTED'});
+            $hdfs_used    = trim($hdfs_quota_info{$hdfs_quota_dir}{'USED_SPACE_FORMATTED'});
+            $percent_used = trim($hdfs_quota_info{$hdfs_quota_dir}{'PERCENTAGE_USED_SPACE'});
+            write;
+            $iterator += 1;
+            last if $iterator == $TOP_LIMIT;
+      } # end of foreach
+
+    } # end if
 
 }
 
