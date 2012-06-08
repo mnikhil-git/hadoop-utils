@@ -164,7 +164,7 @@ $directory, $allocation, $hdfs_used, $percent_used
             $percent_used = trim($hdfs_quota_info{$hdfs_quota_dir}{'PERCENTAGE_USED_SPACE'});
             write;
             $iterator += 1;
-            last if $iterator == $TOP_LIMIT;
+            last if $iterator == $TOP_LIMIT && $TOP_LIMIT != -1;
       } # end of foreach
 
     } # end if
@@ -194,7 +194,7 @@ Options:
 
 -help brief help message
 
--l    limit the output to top lines
+-l    limit the output to top few lines. Default is 10 and with -1 to impose no limits.
 
 =head1 OPTIONS
 
@@ -204,9 +204,27 @@ Options:
 
 Print a brief help message and exits.
 
+=item B<--path>
+
+Provide the hdfs directorie(s) to specifically query the quota of them.
+
+ Example : --path /user/adrel /user/mnikhil
+
+=item B<-d>
+
+Provide the hdfs top level directory name space to query the HDFS quota directories under it.
+
+ Example : -d /user
+
+ Example : -d /projects.
+
+ Multiple options are not supported at this point.
+
 =item B<-l>
 
-Provide the number to limit the output to top -l lines
+Provide the number to limit the output to top -l number of lines.
+  Default value is 10 unless the option is specified.
+  -1 for imposing no limits on the output.
 
 =back
 =head1 DESCRIPTION
