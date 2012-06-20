@@ -1,8 +1,8 @@
 #!/usr/bin/perl
 #
-# $Id: hdfs-quota-df-top.pl 9255 2012-06-08 16:00:41Z nikhil.mulley $
+# $Id: hdfs-quota-df-top.pl 9645 2012-06-20 13:34:49Z nikhil.mulley $
 # $Author: nikhil.mulley $
-# $HeadURL: https://svn.corp.inmobi.com/inmobi/operations/gridops/tools/scripts/src/opt/gridscripts/spaceQuotaMon/hdfs-quota-df-top.pl $
+# $HeadURL: $
 # 
 # Description: report the top quota usage directories in HDFS
 #
@@ -18,7 +18,7 @@ use Data::Dumper qw (Dumper);
 
 # globals
 use vars qw ($PROG $PROGLOG $HADOOP_CMD @HDFS_NAMESPACE $TOP_LIMIT
-             $hdfs_topdir @hdfs_abs_dirs $verbose %hdfs_quota_info );
+             $hdfs_topdir @hdfs_abs_dirs $verbose %hdfs_quota_info $sort_by_col %cols);
 
 # main
 &initialization;
@@ -46,6 +46,11 @@ sub initialization {
     $PROGLOG = "/var/tmp/$PROG.log";
     $TOP_LIMIT = 10;
     %hdfs_quota_info = ();
+    %cols = (
+#            'name'       => 'HDFS_DIRECTORY',
+             'allocation' => 'SPACE_QUOTA',
+             'used'       => 'USED_SPACE',
+            );   
 
 }
 
@@ -57,6 +62,7 @@ sub parse_opts {
     GetOptions(
         'd=s' => \$hdfs_topdir,
         'path:s{0,9}' => \@hdfs_abs_dirs,
+        'sortby=s' => \$sort_by_col,
         'l=i' => \$TOP_LIMIT,
         'verbose' => \$verbose,
         'help|h|?' => \$help
@@ -108,6 +114,7 @@ sub get_hdfs_quota_info {
                 format_bytes(int(int($space_quota) - int($remaining_space_quota)));
             $hdfs_quota_info{$hdfs_quota_dir}{'PERCENTAGE_USED_SPACE'} = 
                 sprintf "%.2f ", ( ($space_quota - $remaining_space_quota) * 100 ) / $space_quota;
+            $hdfs_quota_info{$hdfs_quota_dir}{'HDFS_DIRECTORY'} = $hdfs_quota_dir;
             $hdfs_quota_info{$hdfs_quota_dir}{'HDFS_FILENAME'} = $hdfs_dir;
             $hdfs_quota_info{$hdfs_quota_dir}{'DIR_COUNT'} = $dir_cnt;
             $hdfs_quota_info{$hdfs_quota_dir}{'FILE_COUNT'} = $file_cnt;
@@ -126,6 +133,7 @@ sub get_hdfs_quota_info {
 sub report_hdfs_top_df {
 
    my ($directory, $allocation, $hdfs_used, $percent_used) = ();
+   my ($cmp_col_key) = 'PERCENTAGE_USED_SPACE';
    my ($iterator) = 0;
    #print "VERBOSE : $TOP_LIMIT \n";
 
@@ -154,9 +162,11 @@ $directory, $allocation, $hdfs_used, $percent_used
       }
     }
 
+    $cmp_col_key = $cols{$sort_by_col} if ( defined($sort_by_col)  &&  exists($cols{$sort_by_col}) ) ;
+
     foreach my $hdfs_quota_dir (
                            sort {
-                             $hdfs_quota_info{$b}{'PERCENTAGE_USED_SPACE'} <=> $hdfs_quota_info{$a}{'PERCENTAGE_USED_SPACE'} 
+                             $hdfs_quota_info{$b}{$cmp_col_key} <=> $hdfs_quota_info{$a}{$cmp_col_key} 
                            } @hdfs_dirs_list ) {
             $directory    = $hdfs_quota_dir;
             $allocation   = trim($hdfs_quota_info{$hdfs_quota_dir}{'SPACE_QUOTA_FORMATTED'});
@@ -164,7 +174,7 @@ $directory, $allocation, $hdfs_used, $percent_used
             $percent_used = trim($hdfs_quota_info{$hdfs_quota_dir}{'PERCENTAGE_USED_SPACE'});
             write;
             $iterator += 1;
-            last if $iterator == $TOP_LIMIT;
+            last if $iterator == $TOP_LIMIT && $TOP_LIMIT != -1;;
       } # end of foreach
 
     } # end if
@@ -194,7 +204,7 @@ Options:
 
 -help brief help message
 
--l    limit the output to top lines
+-l    limit the output to top few lines. Default is 10 and with -1 to impose no limits.
 
 =head1 OPTIONS
 
@@ -204,9 +214,39 @@ Options:
 
 Print a brief help message and exits.
 
+=item B<--path>
+
+Provide the hdfs directorie(s) to specifically query the quota of them.
+
+ Example : --path /user/adrel /user/mnikhil
+
+=item B<-d>
+
+Provide the hdfs top level directory name space to query the HDFS quota directories under it.
+
+ Example : -d /user
+
+ Example : -d /projects.
+
+ Multiple options are not supported at this point.
+
 =item B<-l>
 
-Provide the number to limit the output to top -l lines
+Provide the number to limit the output to top -l number of lines.
+  Default value is 10 unless the option is specified.
+  -1 for imposing no limits on the output.
+
+=item B<-sortby>
+
+Use --sortby if needed to sort the output based on the allocation or usage fields.
+The default output is with percentage of used space. Accepts only one value. 
+If needed to sort by allocation, use allocation as value to --sortby option.
+
+  Example : --sortby allocation
+
+If needed to sort by used space,
+
+  Example : --sortby used
 
 =back
 =head1 DESCRIPTION
