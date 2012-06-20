@@ -1,12 +1,18 @@
 #!/usr/bin/perl
 #
+<<<<<<< HEAD
 # $Id: hdfs-quota-df-top.pl 9645 2012-06-20 13:34:49Z nikhil.mulley $
 # $Author: nikhil.mulley $
 # $HeadURL: $
+=======
+# $Id: hdfs-quota-df-top.pl 9255 2012-06-08 16:00:41Z nikhil.mulley $
+# $Author: nikhil.mulley $
+# $HeadURL:$
+>>>>>>> 3ab8fe031cc4cf7a80e5d9e9767144945d9bfe47
 # 
 # Description: report the top quota usage directories in HDFS
 #
-# Nikhil Mulley, InMobi
+# Nikhil Mulley
 #
 use strict;
 use warnings;
@@ -18,7 +24,11 @@ use Data::Dumper qw (Dumper);
 
 # globals
 use vars qw ($PROG $PROGLOG $HADOOP_CMD @HDFS_NAMESPACE $TOP_LIMIT
+<<<<<<< HEAD
              $hdfs_topdir @hdfs_abs_dirs $verbose %hdfs_quota_info $sort_by_col %cols);
+=======
+             $hdfs_topdir @hdfs_abs_dirs $verbose %hdfs_quota_info );
+>>>>>>> 3ab8fe031cc4cf7a80e5d9e9767144945d9bfe47
 
 # main
 &initialization;
@@ -62,7 +72,10 @@ sub parse_opts {
     GetOptions(
         'd=s' => \$hdfs_topdir,
         'path:s{0,9}' => \@hdfs_abs_dirs,
+<<<<<<< HEAD
         'sortby=s' => \$sort_by_col,
+=======
+>>>>>>> 3ab8fe031cc4cf7a80e5d9e9767144945d9bfe47
         'l=i' => \$TOP_LIMIT,
         'verbose' => \$verbose,
         'help|h|?' => \$help
@@ -162,11 +175,17 @@ $directory, $allocation, $hdfs_used, $percent_used
       }
     }
 
+<<<<<<< HEAD
     $cmp_col_key = $cols{$sort_by_col} if ( defined($sort_by_col)  &&  exists($cols{$sort_by_col}) ) ;
 
     foreach my $hdfs_quota_dir (
                            sort {
                              $hdfs_quota_info{$b}{$cmp_col_key} <=> $hdfs_quota_info{$a}{$cmp_col_key} 
+=======
+    foreach my $hdfs_quota_dir (
+                           sort {
+                             $hdfs_quota_info{$b}{'PERCENTAGE_USED_SPACE'} <=> $hdfs_quota_info{$a}{'PERCENTAGE_USED_SPACE'} 
+>>>>>>> 3ab8fe031cc4cf7a80e5d9e9767144945d9bfe47
                            } @hdfs_dirs_list ) {
             $directory    = $hdfs_quota_dir;
             $allocation   = trim($hdfs_quota_info{$hdfs_quota_dir}{'SPACE_QUOTA_FORMATTED'});
@@ -174,7 +193,11 @@ $directory, $allocation, $hdfs_used, $percent_used
             $percent_used = trim($hdfs_quota_info{$hdfs_quota_dir}{'PERCENTAGE_USED_SPACE'});
             write;
             $iterator += 1;
+<<<<<<< HEAD
             last if $iterator == $TOP_LIMIT && $TOP_LIMIT != -1;;
+=======
+            last if $iterator == $TOP_LIMIT && $TOP_LIMIT != -1;
+>>>>>>> 3ab8fe031cc4cf7a80e5d9e9767144945d9bfe47
       } # end of foreach
 
     } # end if
@@ -235,6 +258,7 @@ Provide the hdfs top level directory name space to query the HDFS quota director
 Provide the number to limit the output to top -l number of lines.
   Default value is 10 unless the option is specified.
   -1 for imposing no limits on the output.
+<<<<<<< HEAD
 
 =item B<-sortby>
 
@@ -247,6 +271,8 @@ If needed to sort by allocation, use allocation as value to --sortby option.
 If needed to sort by used space,
 
   Example : --sortby used
+=======
+>>>>>>> 3ab8fe031cc4cf7a80e5d9e9767144945d9bfe47
 
 =back
 =head1 DESCRIPTION
