@@ -1,8 +1,7 @@
 #!/usr/bin/perl
 #
-# $Id: hdfs-quota-df-top.pl 9645 2012-06-20 13:34:49Z nikhil.mulley $
+# $Id: hdfs-quota-df-top.pl 9257 2012-06-08 16:53:53Z nikhil.mulley $
 # $Author: nikhil.mulley $
-# $HeadURL: $
 # 
 # Description: report the top quota usage directories in HDFS
 #
@@ -138,12 +137,16 @@ sub report_hdfs_top_df {
    #print "VERBOSE : $TOP_LIMIT \n";
 
    format REPORT_HANDLE_HEADER =
-HDFS Directory          Allocated Quota      Used Space       Used (%)
-----------------------------------------------------------------------
+| HDFS Directory            Allocated Quota          Used Space       Used (%)   |
+|------------------------|----------------------|-----------------|--------------|
+.
+
+   format REPORT_HANDLE_FOOTER =
+|------------------------|----------------------|-----------------|--------------|
 .
 
    format REPORT_HANDLE =
-@<<<<<<<<<<<<<<<<<<<<< @|||||||||||||||||||  @|||||||||||||   @<<<<<<<<<
+| @<<<<<<<<<<<<<<<<<<<<< | @||||||||||||||||||| |  @||||||||||||| |   @<<<<<<<<< |
 $directory, $allocation, $hdfs_used, $percent_used
 .
 
@@ -177,6 +180,7 @@ $directory, $allocation, $hdfs_used, $percent_used
             last if $iterator == $TOP_LIMIT && $TOP_LIMIT != -1;;
       } # end of foreach
 
+    $~ = 'REPORT_HANDLE_FOOTER'; write;
     } # end if
 
 }
@@ -239,12 +243,12 @@ Provide the number to limit the output to top -l number of lines.
 =item B<-sortby>
 
 Use --sortby if needed to sort the output based on the allocation or usage fields.
-The default output is with percentage of used space. Accepts only one value. 
+The default output is with percentage of used space. Accepts only one value.
 If needed to sort by allocation, use allocation as value to --sortby option.
 
   Example : --sortby allocation
 
-If needed to sort by used space,
+If needed to sort by used,
 
   Example : --sortby used
 
