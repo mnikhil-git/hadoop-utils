@@ -75,7 +75,7 @@ sub parse_opts {
 sub get_hdfs_quota_info {
    
     my ($hdfs_top_namespace) = (@_);
-    my $run_cmd = "$HADOOP_CMD  fs -count -q $hdfs_top_namespace/*";
+    my $run_cmd = "$HADOOP_CMD  fs -count -q \"$hdfs_top_namespace/*\"";
 
     my @quota_info_namespace = `$run_cmd`;
     my $exit_status = $? >> 8;
