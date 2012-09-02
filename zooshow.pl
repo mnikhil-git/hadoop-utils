@@ -32,8 +32,12 @@ sub initialization {
 
 sub show_zoo {
    
-    foreach my $zoo_server ( keys %{$zoo_info} ) {
-      printf ("%20s | %5s | %-10s|\n", $zoo_server, $zoo_info->{$zoo_server}->{'version'}, $zoo_info->{$zoo_server}->{'mode'});
+    foreach my $zoo_server ( sort keys %{$zoo_info} ) {
+      printf ("%20s | %5s | %-10s|\n", 
+                 $zoo_server, 
+                 $zoo_info->{$zoo_server}->{'version'}, 
+                 $zoo_info->{$zoo_server}->{'mode'}
+             );
     }
 
 }
