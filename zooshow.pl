@@ -54,8 +54,10 @@ sub get_zoo_details {
 		     Proto    => 'tcp',
 		     Timeout  => 60,
 		     Type     => SOCK_STREAM,
-		     ) or croak "Could not connect to $zoo_server:$clients_port: $@";
+		     ) ;
 
+     if (defined($zoo_conn) && $zoo_conn) {
+		     
      print $zoo_conn $stat_cmd;
 
      while(<$zoo_conn>) {
@@ -69,9 +71,11 @@ sub get_zoo_details {
                }
 	       # print "DUMP: $attr --> $value \n";#push(@answer, $_);
              }
-     }
+     } # end while
 
      close ($zoo_conn);
+     
+     } # end if
   }
 
      #print Dumper($zoo_info);
