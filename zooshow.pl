@@ -33,11 +33,10 @@ sub initialization {
 sub show_zoo {
    
     foreach my $zoo_server ( sort keys %{$zoo_info} ) {
-      printf ("%20s | %5s | %-10s|\n", 
+      printf "%20s | %5s | %-10s|\n", 
                  $zoo_server, 
                  $zoo_info->{$zoo_server}->{'version'}, 
-                 $zoo_info->{$zoo_server}->{'mode'}
-             );
+                 $zoo_info->{$zoo_server}->{'mode'};
     }
 
 }
@@ -54,25 +53,29 @@ sub get_zoo_details {
 		     Proto    => 'tcp',
 		     Timeout  => 60,
 		     Type     => SOCK_STREAM,
-		     ) or croak "Could not connect to $zoo_server:$clients_port: $@";
+		     );
 
-     print $zoo_conn $stat_cmd;
+     if ($zoo_conn) {
+       print $zoo_conn $stat_cmd;
 
-     while(<$zoo_conn>) {
-	     chomp;
-             if (my ($attr, $value) = (split/:/, $_)) {
-               if ($attr =~ /Zookeeper version/) {
-                 ($zoo_info->{$zoo_server}->{'version'} = trim($value)) =~ s/(\d+\.\d+\.\d+)-.*/$1/;
-               }  
-               if ($attr =~/Mode/) {
-                 $zoo_info->{$zoo_server}->{'mode'} = trim($value);
-               }
-	       # print "DUMP: $attr --> $value \n";#push(@answer, $_);
-             }
+       while(<$zoo_conn>) {
+	 chomp;
+         if (my ($attr, $value) = (split/:/, $_)) {
+           if ($attr =~ /Zookeeper version/) {
+             ($zoo_info->{$zoo_server}->{'version'} = trim($value)) =~ s/(\d+\.\d+\.\d+)-.*/$1/;
+           }  
+           if ($attr =~/Mode/) {
+             $zoo_info->{$zoo_server}->{'mode'} = trim($value);
+           }
+	   # print "DUMP: $attr --> $value \n";#push(@answer, $_);
+           }
+       }
+
+       close ($zoo_conn);
+     } else {
+       warn "Could not connect to $zoo_server:$clients_port : $@";
      }
-
-     close ($zoo_conn);
-  }
+   }
 
      #print Dumper($zoo_info);
 }
