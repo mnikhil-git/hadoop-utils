@@ -9,17 +9,14 @@
 # read the list of zookeeper servers from the configuration file
 # get the mode status of them. Useful to know who is current leader of ensemble.
 
-use IO::Socket;
 use warnings;
 use strict ;
-use Carp;
-use Data::Dumper;
+use Net::ZKMon;
 
 use vars qw ($zoo_cfg $clients_port $zoo_servers $zoo_info $verbose);
 
 &initialization;
 &read_zoo_config;
-&get_zoo_details;
 &show_zoo;
 
 sub initialization {
@@ -31,54 +28,17 @@ sub initialization {
 }
 
 sub show_zoo {
-   
-    foreach my $zoo_server ( sort keys %{$zoo_info} ) {
+
+    my $zkmon = new Net::ZKMon;
+
+    foreach my $zoo_server ( &get_zoo_servers ) {
+      my $z_server_stat = $zoo_server->stat($zoo_server);
       printf "%20s | %5s | %-10s|\n", 
                  $zoo_server, 
-                 $zoo_info->{$zoo_server}->{'version'}, 
-                 $zoo_info->{$zoo_server}->{'mode'};
+                 $z_server_stat->{'version'}, 
+                 $z_server_stat->{'Mode'}, 
     }
 
-}
-
-sub get_zoo_details {
-
-   my $stat_cmd = "stat\n";  
-   foreach my $zoo_server (&get_zoo_servers) {
-
-     print "INFO| Connecting to $zoo_server:$clients_port \n" if $verbose; 
-     my $zoo_conn = IO::Socket::INET->new(
-		     PeerAddr => $zoo_server,
-		     PeerPort => $clients_port,
-		     Proto    => 'tcp',
-		     Timeout  => 60,
-		     Type     => SOCK_STREAM,
-		     );
-
-     if ($zoo_conn) {
-       print $zoo_conn $stat_cmd;
-
-       while(<$zoo_conn>) {
-	 chomp;
-         if (my ($attr, $value) = (split/:/, $_)) {
-           if ($attr =~ /Zookeeper version/) {
-             ($zoo_info->{$zoo_server}->{'version'} = trim($value)) 
-                 =~ s/(\d+\.\d+\.\d+)-.*/$1/;
-           }  
-           if ($attr =~/Mode/) {
-             $zoo_info->{$zoo_server}->{'mode'} = trim($value);
-           }
-	   # print "DUMP: $attr --> $value \n";#push(@answer, $_);
-           }
-       }
-
-       close ($zoo_conn);
-     } else {
-       warn "Could not connect to $zoo_server:$clients_port : $@";
-     }
-   }
-
-     #print Dumper($zoo_info);
 }
 
 sub read_zoo_config {
