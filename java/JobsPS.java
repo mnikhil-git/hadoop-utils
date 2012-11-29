@@ -9,10 +9,7 @@ import java.util.Properties;
 import org.apache.hadoop.fs.*;
 import org.apache.hadoop.mapred.*;
 import org.apache.hadoop.mapred.jobcontrol.Job;
-import org.apache.log4j.Level;
-import org.apache.commons.logging.*;
 import org.apache.commons.cli.*;
-import org.apache.commons.logging.impl.Log4JLogger;
 
 /*
 Author : Nikhil Mulley
@@ -34,7 +31,6 @@ usage: Hadoop MapReduce Jobs lister.  Available options as follow:
 public class JobsPS {
 
 
-    Log4JLogger lg=new Log4JLogger(this.getClass().getName());
     SimpleGNUCommandLine cli;
     JobConf jcfg = new JobConf();
     JobClient jc;
