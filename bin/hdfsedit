@@ -1,0 +1,31 @@
+#!/bin/bash
+
+#
+# Nikhil Mulley 
+#
+HDFS_FILE=$1
+if [[ -z "${HDFS_FILE}" ]] #checking for arguments
+then
+  echo "Error| No Arguments supplied"
+  exit 1
+else
+  TMP_LFILE=`mktemp /tmp/hdfsedit.XXXX` || {
+  echo "Error| Unable to create temp file "; 
+  exit 1 
+  }
+  echo "HDFS path is ${HDFS_FILE}" #checking hadoop location
+  hadoop dfs -ls ${HDFS_FILE} 1>&- 2>&-
+  status=$?
+  if [[ $status -ne 0 ]]
+  then 
+    echo "Error| HDFS path doest not exist !"
+    exit 1
+  fi
+  rm -f ${TMP_LFILE} && hadoop dfs -get ${HDFS_FILE} ${TMP_LFILE}    #getting file from hadoop
+  vim ${TMP_LFILE}                               #opening file for edit 
+  wait $!
+  hadoop dfs -rm ${HDFS_FILE}
+  hadoop dfs -put ${TMP_LFILE} ${HDFS_FILE}  #pushing tmp file to hadoop
+  echo "${HDFS_FILE} updated"
+  rm -f ${TMP_LFILE} ; exit 0
+fi
